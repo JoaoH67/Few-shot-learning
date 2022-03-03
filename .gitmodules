@@ -1,0 +1,3 @@
+[submodule "prototypical-networks"]
+	path = prototypical-networks
+	url = https://github.com/jakesnell/prototypical-networks.git
