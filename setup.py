@@ -8,5 +8,8 @@ setup(name='protonets',
       packages=['protonets', 'protonets.utils', 'protonets.data', 'protonets.models'],
       install_requires=[
           'torch',
+          'torchnet',
+          'plotly',
+          'kaleido',
           'tqdm'
       ])
