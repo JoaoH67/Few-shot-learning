@@ -15,3 +15,10 @@ def euclidean_dist(x, y):
     distances = torch.pow(x - y, 2).sum(2)
 
     return distances
+
+
+def MAPE_loss(output, target):
+
+    assert output.shape[0] == target.shape[0]
+
+    return (output/target - 1).abs().mean()

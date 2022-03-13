@@ -11,5 +11,7 @@ setup(name='protonets',
           'torchnet',
           'plotly',
           'kaleido',
-          'tqdm'
+          'tqdm',
+          'pandas',
+          'scikit-learn'
       ])
