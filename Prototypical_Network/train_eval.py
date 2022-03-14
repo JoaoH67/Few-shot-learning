@@ -164,7 +164,7 @@ def arg_config():
     parser.add_argument('--train.episodes', type=int, default=100, metavar='NTRAIN',
                         help="number of train episodes per epoch (default: 100)")
 
-    parser.add_argument('--eval.way', type=int, default=5, metavar='EVALWAY',
+    parser.add_argument('--eval.way', type=int, default=20, metavar='EVALWAY',
                         help="number of classes per episode in evaluation. 0 means same as train.way (default: 5)")
     parser.add_argument('--eval.shot', type=int, default=10, metavar='EVALSHOT',
                         help="number of support examples per class in evaluation. 0 means same as train.shot (default: 0)")
