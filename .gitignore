@@ -30,6 +30,7 @@ Latest commit eabb671 on Feb 2
   
 # Byte-compiled / optimized / DLL files
 __pycache__/
+*__pycache__/
 *.py[cod]
 *$py.class
 

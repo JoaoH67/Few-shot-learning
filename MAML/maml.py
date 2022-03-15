@@ -6,11 +6,18 @@ from torch.nn import functional as F
 from torch import optim
 
 from learner import Learner
+from utils import obtain_data
 from copy import deepcopy
 
 
 
-class Meta(nn.Module):
+device = torch.device('cpu')
+if torch.cuda.is_available():
+    device = torch.device('cuda')
+
+
+
+class MAML(nn.Module):
     """
     Meta Learner
     """
@@ -19,7 +26,7 @@ class Meta(nn.Module):
 
         :param args:
         """
-        super(Meta, self).__init__()
+        super(MAML, self).__init__()
 
         self.update_lr = args.update_lr
         self.meta_lr = args.meta_lr
@@ -31,7 +38,7 @@ class Meta(nn.Module):
         self.update_step_test = args.update_step_test
 
 
-        self.net = Learner(config, args.imgc, args.imgsz)
+        self.net = Learner(config)
         self.meta_optim = optim.Adam(self.net.parameters(), lr=self.meta_lr)
 
 
@@ -61,7 +68,7 @@ class Meta(nn.Module):
         return total_norm/counter
 
 
-    def forward(self, x_spt, y_spt, x_qry, y_qry):
+    def forward(self, db):
         """
 
         :param x_spt:   [b, setsz, c_, h, w]
@@ -70,6 +77,7 @@ class Meta(nn.Module):
         :param y_qry:   [b, querysz]
         :return:
         """
+        x_spt, y_spt, x_qry, y_qry = obtain_data(db, device=device)
         task_num = x_spt.shape[0]
 
         losses_q = [0 for _ in range(self.update_step + 1)]  # losses_q[i] is the loss on step i
@@ -130,7 +138,7 @@ class Meta(nn.Module):
         return loss_q.detach().numpy()
 
 
-    def finetunning(self, x_spt, y_spt, x_qry, y_qry):
+    def finetunning(self, db):
         """
 
         :param x_spt:   [setsz, c_, h, w]
@@ -139,8 +147,8 @@ class Meta(nn.Module):
         :param y_qry:   [querysz]
         :return:
         """
-        #assert len(x_spt.shape) == 4
 
+        x_spt, y_spt, x_qry, y_qry = obtain_data(db, device=device)
         losses = [inf for _ in range(self.update_step_test + 1)]
 
         # in order to not ruin the state of running_mean/variance and bn_weight/bias

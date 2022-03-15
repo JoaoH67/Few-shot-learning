@@ -121,7 +121,7 @@ def train(model, config, train_dict, valid_dict, logger):
         epoch_loss = epoch_loss / train_dict['epoch_size']
 
         # output the epoch loss and the epoch acc
-        if epochs_so_far%10 == 0:
+        if epochs_so_far%1 == 0:
             logger.info('Loss: %.4f' % (epoch_loss))
             # do one epoch of evaluation on the validation test
             evaluate_valid(model, config, valid_dict, epochs_so_far + 1, logger)
@@ -155,16 +155,16 @@ def arg_config():
 
     parser.add_argument('--train.epochs', type=int, default=100, metavar='NEPOCHS',
                         help='number of epochs to train (default: 10000)')
-    parser.add_argument('--train.way', type=int, default=2, metavar='TRAINWAY',
+    parser.add_argument('--train.way', type=int, default=5, metavar='TRAINWAY',
                         help="number of classes per episode (default: 2) for training")
-    parser.add_argument('--train.shot', type=int, default=20, metavar='TRIANSHOT',
+    parser.add_argument('--train.shot', type=int, default=10, metavar='TRIANSHOT',
                         help="number of support examples per class (default: 5) for training")
     parser.add_argument('--train.query', type=int, default=5, metavar='TRAINQUERY',
                         help="number of query examples per class (default: 5) for training")
     parser.add_argument('--train.episodes', type=int, default=100, metavar='NTRAIN',
                         help="number of train episodes per epoch (default: 100)")
 
-    parser.add_argument('--eval.way', type=int, default=20, metavar='EVALWAY',
+    parser.add_argument('--eval.way', type=int, default=5, metavar='EVALWAY',
                         help="number of classes per episode in evaluation. 0 means same as train.way (default: 5)")
     parser.add_argument('--eval.shot', type=int, default=10, metavar='EVALSHOT',
                         help="number of support examples per class in evaluation. 0 means same as train.shot (default: 0)")

@@ -2,28 +2,10 @@ import torch
 import  numpy as np
 import  scipy.stats
 import  argparse
+import os
 
-from meta import Meta
-from data_loader import load_data, extract_episode
-
-
-def obtain_data(data, num_way, num_shot, num_query, device):
-    db = extract_episode(data, num_way, num_shot, num_query)
-    features, temps = db['features'].to(device), db['temps'].to(device)
-    # from each class, extract num_shot support images
-    x_support = features[:, :num_shot]  # lines are classes and columns are images
-    # from each class, extract the remaining images as query images
-    x_query = features[:, num_shot:]  # lines are classes and columns are images
-    # transform into a array in which all images are contiguous
-    x_support = x_support.contiguous().view(1, num_way * num_shot, -1)  # no more lines and columns
-    x_query = x_query.contiguous().view(1, num_way * num_query, -1)
-
-    y_support = temps[:, :num_shot].to(device)
-    y_query = temps[:, num_shot:].to(device)
-    y_support = y_support.contiguous().view(1, num_way * num_shot, 1)
-    y_query = y_query.contiguous().view(1, num_way * num_query, 1)
-
-    return x_support, y_support, x_query, y_query
+from maml import MAML
+from utils import load_data, extract_episode
 
 
 
@@ -45,22 +27,36 @@ def main():
 
     num_way, num_shot, num_query = args.n_way, args.k_spt, args.k_qry
 
-    config = [
-        ('linear', [32, 81]),
+    net_config = [
+        ('linear', [64, 81]),
         ('relu', [True]),
-        ('linear', [16, 32]),
+        ('linear', [64, 64]),
         ('relu', [True]),
-        ('linear', [8, 16]),
+        ('linear', [64, 64]),
         ('relu', [True]),
-        ('linear', [1, 8]),
-        ('relu', [True])
+        ('linear', [64, 64]),
+        ('relu', [True]),
+        ('linear', [1, 64]),
+        ('relu', [True]),
+    ]
+
+    proto_config = [
+        ('linear', [64, 81]),
+        ('relu', [True]),
+        ('linear', [64, 64]),
+        ('relu', [True]),
+        ('linear', [64, 64]),
+        ('relu', [True]),
+        ('linear', [64, 64]),
+        ('relu', [True]),
     ]
 
     device = torch.device('cpu')
     if torch.cuda.is_available():
         device = torch.device('cuda')
 
-    maml = Meta(args, config).to(device)
+    #maml = MAML(args, net_config, proto_config).to(device)
+    maml = MAML(args, net_config).to(device)
 
     tmp = filter(lambda x: x.requires_grad, maml.parameters())
     num = sum(map(lambda x: np.prod(x.shape), tmp))
@@ -71,40 +67,47 @@ def main():
     data_train = load_data('../data/superconductors/not_cuprate.csv')
     data_test = load_data('../data/superconductors/cuprate.csv')
 
+    min_loss = 100000
+
     for _ in range(args.epoch):
 
         loss_all_train = []
-        for step in range(900):
+        for step in range(100):
 
-            x_support, y_support, x_query, y_query = obtain_data(data_train, num_way, num_shot, num_query, device)
-            loss = maml(x_support, y_support, x_query, y_query)
+            db = extract_episode(data_train, num_way, num_shot, num_query)
+            loss = maml(db)
             loss_all_train.append(loss)
-            if step % 300 == 299:
+            if step % 100 == 99:
                 loss = np.array(loss_all_train).mean(axis=0).astype(np.float16)
                 print('step:', step, '\ttraining loss:', loss)
                 loss_all_train = []
 
         loss_all_test = []
-        for step in range(300):
-            x_support, y_support, x_query, y_query = obtain_data(data_test, num_way, num_shot, num_query, device)
-            loss = maml.finetunning(x_support, y_support, x_query, y_query)
+        for step in range(100):
+            db = extract_episode(data_test, num_way, num_shot, num_query)
+            loss = maml.finetunning(db)
             loss_all_test.append(loss)
         loss = np.array(loss_all_test).mean(axis=0).astype(np.float16)
-        print('Test los:', loss)
+        print('Test loss:', loss)
+        if loss.min() < min_loss:
+            min_loss = loss.min()
+            print('This is the best model so far, saving.')
+            results_dir = './results/'
+            if not os.path.exists(results_dir):
+                os.mkdir(results_dir)
+            torch.save(maml.state_dict(), results_dir + 'best_model.pth')
 
 
 if __name__ == '__main__':
 
     argparser = argparse.ArgumentParser()
     argparser.add_argument('--epoch', type=int, help='epoch number', default=100)
-    argparser.add_argument('--n_way', type=int, help='n way', default=2)
+    argparser.add_argument('--n_way', type=int, help='n way', default=5)
     argparser.add_argument('--k_spt', type=int, help='k shot for support set', default=10)
     argparser.add_argument('--k_qry', type=int, help='k shot for query set', default=10)
-    argparser.add_argument('--imgsz', type=int, help='imgsz', default=84)
-    argparser.add_argument('--imgc', type=int, help='imgc', default=3)
     argparser.add_argument('--task_num', type=int, help='meta batch size, namely task num', default=1)
     argparser.add_argument('--meta_lr', type=float, help='meta-level outer learning rate', default=1e-3)
-    argparser.add_argument('--update_lr', type=float, help='task-level inner update learning rate', default=0.01)
+    argparser.add_argument('--update_lr', type=float, help='task-level inner update learning rate', default=0.002)
     argparser.add_argument('--update_step', type=int, help='task-level inner update steps', default=5)
     argparser.add_argument('--update_step_test', type=int, help='update steps for finetunning', default=10)
 
