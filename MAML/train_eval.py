@@ -40,7 +40,7 @@ def main():
         ('relu', [True]),
     ]
 
-    proto_config = [
+    '''proto_config = [
         ('linear', [64, 81]),
         ('relu', [True]),
         ('linear', [64, 64]),
@@ -49,7 +49,7 @@ def main():
         ('relu', [True]),
         ('linear', [64, 64]),
         ('relu', [True]),
-    ]
+    ]'''
 
     device = torch.device('cpu')
     if torch.cuda.is_available():
