@@ -6,7 +6,7 @@ import os
 import pickle
 import argparse
 
-from data_loader import load_data, extract_episode
+from utils import load_data, extract_episode
 from few_shot import load_protonet
 from logger import create_logger
 
